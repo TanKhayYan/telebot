@@ -7,8 +7,8 @@ from datetime import datetime  # Don't forget this
 # Enable logging
 logging.basicConfig(level=logging.INFO)
 
-TOKEN: Final = "7437237126:AAFNsP1jHSOfZ4IqbtkdQd7L48cSvktGiCE"
-BOT_USERNAME: Final = "@CQ1251_bot"
+TOKEN: Final = "INPUT TOKEN"
+BOT_USERNAME: Final = "@BOT_USERNAME"
 
 # Dictionary of personnel with initial statuses
 personnel_status = {
