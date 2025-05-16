@@ -140,6 +140,23 @@ async def show_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     report_text = generate_report()
     await update.message.reply_text(report_text)
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    help_text = (
+        "Current functions: Parade state\n\n"
+        "How to use the bot for parade state:\n"
+        "1. /start (start the bot)\n"
+        "2. Enter your name (doesn't have to be full)\n"
+        "3. Enter your status. Status will remain constant unless changed. "
+        "e.g., if you do not change it from P to MC the next day, it will remain as P. "
+        "Whatever you input will be reflected after your name.\n"
+        "e.g., inputting 'present' as 3SG TAN KHAY YAN will reflect: "
+        "`3SG TAN KHAY YAN - present`, rather than `3SG TAN KHAY YAN - P`.\n"
+        "Accepted formats are: P, MC, MA, OL, OFF, ABSENT.\n"
+        "4. If you are on MC, input date range (e.g., 160525-170525).\n\n"
+        "/report (produces parade state)"
+    )
+    await update.message.reply_text(help_text)
+
 def main():
     app = Application.builder().token(TOKEN).build()
 
@@ -154,8 +171,8 @@ def main():
     )
 
     app.add_handler(CommandHandler("report", show_report))
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(conv_handler)
-
     app.run_polling()
 
 if __name__ == "__main__":
