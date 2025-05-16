@@ -2,6 +2,7 @@ from typing import Final
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters, ConversationHandler
 import logging
+from datetime import datetime  # Don't forget this
 
 # Enable logging
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,64 @@ personnel_status = {
 # Define conversation states
 STATUS, DATES, SET_DATES = range(3)
 
+# ✅ Moved this ABOVE where it's used
+def generate_report():
+    today = datetime.now().strftime("%d/%m/%Y\n(%A)").upper()
+    total = len(personnel_status)
+    present = sum(1 for p in personnel_status.values() if p["status"] == "P")
+
+    sorted_personnel = sorted(personnel_status.items(), key=lambda x: x[1]['rank'] + x[0])
+    log_lines = []
+    for idx, (name, info) in enumerate(sorted_personnel, start=1):
+        status = info["status"]
+        dates = f" ({info['dates']})" if info["dates"] else ""
+        log_lines.append(f"{idx}) {info['rank']} {name} - {status}{dates}")
+
+    duty_rotation = [
+        "YaoNeng", "Kelven", "Alvern", "Shao En",
+        "Yu Shen", "Evan", "Demien", "Randall"
+    ]
+    duty_section = "\n- " + "\n- ".join(duty_rotation)
+
+    return f"""Date: {today}
+Strength: {total}
+Present: {present}
+
+*==========*
+*LOGS Branch {present}/{total}
+  
+{chr(10).join(log_lines)}
+*==========*
+
+Duty storeman for today 
+==========
+*DUTY STOREMAN ROTATION*{duty_section}
+
+  
+-You are to *Manage the key issue/registered book* in LOG BR office.
+
+*Key registered book*
+- Any cancellation must be in *RED* ink and sign in blue/black ink.
+
+You are to open LOG BR office by *0800h*. 
+
+*Non-compliance* 
+- Will be given extra duty storeman 
+==========
+==========
+*MC submission for ALL*
+- You are to upload your MC into the OneNS immediately upon receiving it from the hospital/any private clinic.(less MC from camp)
+
+- *Show it to 2WO Pauline once you report back to camp.*
+
+- All MC hard copy are to be kept with you for minimum *(2 year)*.
+
+*(Any MC not uploaded/submitted in OneNS will be considered as AWOL and you'll be charged)*
+==========
+==========
+"""
+
+# Command handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Welcome! Please enter your full name to continue:")
     return STATUS
@@ -57,6 +116,7 @@ async def date_step(update: Update, context: ContextTypes.DEFAULT_TYPE):
         personnel_status[name]["status"] = "P"
         personnel_status[name]["dates"] = ""
         await update.message.reply_text(f"Status for {name} updated to Present.")
+        await update.message.reply_text(generate_report())
         return ConversationHandler.END
     else:
         await update.message.reply_text("Enter the date range (e.g., 160525-170525):")
@@ -69,11 +129,16 @@ async def set_dates(update: Update, context: ContextTypes.DEFAULT_TYPE):
     personnel_status[name]["status"] = status
     personnel_status[name]["dates"] = date_range
     await update.message.reply_text(f"{name} updated to {status} ({date_range}).")
+    await update.message.reply_text(generate_report())
     return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Update canceled.")
     return ConversationHandler.END
+
+async def show_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    report_text = generate_report()
+    await update.message.reply_text(report_text)
 
 def main():
     app = Application.builder().token(TOKEN).build()
@@ -88,7 +153,9 @@ def main():
         fallbacks=[CommandHandler("cancel", cancel)],
     )
 
+    app.add_handler(CommandHandler("report", show_report))
     app.add_handler(conv_handler)
+
     app.run_polling()
 
 if __name__ == "__main__":
